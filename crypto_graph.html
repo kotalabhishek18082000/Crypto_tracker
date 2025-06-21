@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Cryptocurrency Graph</title>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css"
+    />
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+  </head>
+
+  <script>
+    function selectCurrency(e) {
+      alert("currency changed");
+    }
+  </script>
+  <body class="flex flex-col justify-center">
+    <div class="flex flex-row justify-center">
+      <a href="/" class="absolute hover:hand hover:underline left-10">Back</a>
+      <h1 class="text-2xl text-bold">Cryptocurrency Price Chart</h1>
+    </div>
+    <div id="currency-icon" class="flex justify-center m-3 text-md"></div>
+
+    <canvas
+      id="cryptoGraph"
+      width="400"
+      height="20"
+      class="max-h-[85vh]"
+    ></canvas>
+    <script>
+      const urlParams = new URLSearchParams(window.location.search);
+      const cryptoId = urlParams.get("id");
+      const currency = urlParams.get("currency") || "usd"; // Default to USD if not provided
+      const API_URL = `https://api.coingecko.com/api/v3/coins/${cryptoId}/market_chart?vs_currency=${currency}&days=30`;
+
+      $(document).ready(function () {
+        // Function to get currency icon based on currency code
+        function getCurrencyIcon(currency) {
+          switch (currency) {
+            case "usd":
+              return "$";
+            case "eur":
+              return "€";
+            case "gbp":
+              return "£";
+            case "jpy":
+              return "¥";
+            case "aud":
+              return "A$"; // Australian Dollar
+            case "cad":
+              return "C$"; // Canadian Dollar
+            case "chf":
+              return "CHF"; // Swiss Franc
+            case "cny":
+              return "¥"; // Chinese Yuan
+            case "inr":
+              return "₹"; // Indian Rupee
+            case "brl":
+              return "R$"; // Brazilian Real
+            // Add more currencies as needed
+            default:
+              return "$"; // Default to USD
+          }
+        }
+
+        // Display currency icon
+        $("#currency-icon").html(
+          `Price (${getCurrencyIcon(currency)} ${currency.toUpperCase()})`
+        );
+
+        $.ajax({
+          url: API_URL,
+          success: (data) => {
+            const labels = data.prices.map((price) =>
+              new Date(price[0]).toLocaleDateString()
+            );
+            const prices = data.prices.map((price) => price[1]);
+
+            const ctx = document.getElementById("cryptoGraph").getContext("2d");
+            new Chart(ctx, {
+              type: "line",
+              data: {
+                labels: labels,
+                datasets: [
+                  {
+                    label: `${cryptoId.toUpperCase()} Price`,
+                    data: prices,
+                    borderColor: "rgba(75, 192, 192, 1)",
+                    backgroundColor: "rgba(75, 192, 192, 0.2)",
+                    borderWidth: 2,
+                    pointRadius: 3,
+                    pointHoverRadius: 5,
+                    tension: 0.4, // Smooth line
+                  },
+                ],
+              },
+              options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                animation: {
+                  duration: 1000,
+                  easing: "linear",
+                },
+                scales: {
+                  x: {
+                    title: {
+                      display: true,
+                      text: "Date",
+                      font: {
+                        size: 14,
+                        weight: "bold",
+                      },
+                    },
+                    ticks: {
+                      autoSkip: true,
+                      maxTicksLimit: 10,
+                    },
+                  },
+                  y: {
+                    title: {
+                      display: true,
+                      text: `Price (${currency.toUpperCase()})`,
+                      font: {
+                        size: 14,
+                        weight: "bold",
+                      },
+                    },
+                    beginAtZero: false,
+                    ticks: {
+                      callback: function (value) {
+                        return (
+                          getCurrencyIcon(currency) + value.toLocaleString()
+                        );
+                      },
+                    },
+                  },
+                },
+              },
+            });
+          },
+          error: () => alert("Error fetching graph data"),
+        });
+      });
+    </script>
+  </body>
+</html>
